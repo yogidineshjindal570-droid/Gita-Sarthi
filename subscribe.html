@@ -82,7 +82,7 @@ p.sub{font-size:14px;color:#cdc4ec;max-width:320px;margin:0 auto 26px;line-heigh
 .check-btn:disabled{opacity:.6}
 </style></head><body>
 
-<h1>चैट जारी रखने के लिए ₹9 दक्षिणा अर्पित करें</h1>
+<h1>चैट जारी रखने के लिए ₹9 दक्षिणा अर्पित करें (30 दिन)</h1>
 <p class="sub">आपकी 3 प्रश्नों की निःशुल्क सीमा पूरी हो गई है। नीचे अपना विवरण भरें, फिर ₹9 का QR कोड स्कैन करके दक्षिणा अर्पित करें, और बटन दबाकर पूर्ण करें।</p>
 
 <div class="form-card" id="formCard">
@@ -121,6 +121,7 @@ p.sub{font-size:14px;color:#cdc4ec;max-width:320px;margin:0 auto 26px;line-heigh
 <script>
 // TODO: replace with your real n8n webhook URLs (see setup notes provided separately)
 var SUBSCRIBE_WEBHOOK = "https://ishikagarg.app.n8n.cloud/webhook/gita-subscribe";
+var SUBSCRIPTION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 var STATUS_WEBHOOK = "https://ishikagarg.app.n8n.cloud/webhook/gita-subscribe-status";
 
 var form = document.getElementById("subForm");
@@ -184,16 +185,40 @@ async function checkStatus(phone) {
       body: JSON.stringify({ phone: phone })
     });
     var data = await res.json();
-    if (data.status === "approved") {
+    var status = data.status;
+    var until = 0;
+    if (status === "approved") {
+      // Expiry comes from n8n (data.expiresAt, ISO date). Fallback: 30 days from now,
+      // without extending a subscription that is still running.
+      until = data.expiresAt ? Date.parse(data.expiresAt) : NaN;
+      if (isNaN(until)) {
+        var existing = parseInt(localStorage.getItem("krishna_unlocked_until") || "0", 10) || 0;
+        until = existing > Date.now() ? existing : Date.now() + SUBSCRIPTION_MS;
+      }
+      if (until <= Date.now()) status = "expired";
+    }
+    if (status === "approved") {
       statusBadge.className = "badge approved";
       statusBadge.textContent = "स्वीकृत";
       statusText.textContent = "आपकी दक्षिणा स्वीकृत हो गई है। चैट खोली जा रही है...";
-      localStorage.setItem("krishna_unlocked", "true");
+      localStorage.setItem("krishna_unlocked_until", String(until));
+      localStorage.removeItem("krishna_unlocked");
       setTimeout(function () {
         window.location.href = "index.html";
       }, 900);
       return;
-    } else if (data.status === "not_found") {
+    } else if (status === "expired") {
+      localStorage.removeItem("krishna_unlocked_until");
+      localStorage.removeItem("krishna_unlocked");
+      localStorage.removeItem("krishna_phone");
+      statusBadge.className = "badge notfound";
+      statusBadge.textContent = "अवधि समाप्त";
+      statusText.textContent = "आपकी 30 दिन की सदस्यता समाप्त हो गई है। कृपया ₹9 दोबारा अर्पित करें।";
+      setTimeout(function () {
+        statusCard.style.display = "none";
+        formCard.style.display = "block";
+      }, 1800);
+    } else if (status === "not_found") {
       statusBadge.className = "badge notfound";
       statusBadge.textContent = "जानकारी नहीं मिली";
       statusText.textContent = "आपकी जानकारी नहीं मिली। कृपया फॉर्म दोबारा भरें।";
