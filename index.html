@@ -1380,8 +1380,9 @@ if(!isUnlocked() && msgCount >= FREE_LIMIT){
     try{ localStorage.setItem(DISMISS_KEY, '1'); }catch(e){}
   }
   function maybeAutoShow(){
-    if(isInstalledAlready() || isDismissed()) return;
-    showBanner();
+    // Auto popup disabled: the install banner now only appears when the
+    // user taps "Install App" in the menu.
+    return;
   }
 
   // Always listen for the native install event so a deferred prompt is
