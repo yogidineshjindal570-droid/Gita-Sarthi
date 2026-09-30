@@ -688,9 +688,11 @@ function addPlayLocal(bubble,blob){
 }
 
 var FREE_LIMIT = 3;
-var msgCount = 0;
+var msgCount = parseInt(lsGet("krishna_msgcount") || "0", 10) || 0;
+function saveCount(){ lsSet("krishna_msgcount", String(msgCount)); }
 function bumpCount(){
   msgCount++;
+  saveCount();
 }
 var subModal = document.getElementById("subModal");
 var langModal = document.getElementById("langModal");
@@ -1130,6 +1132,7 @@ async function sendVoice(blob,filename){
     // both bubbles, don't count it as a question, and show a hint instead.
     if(!/[\p{L}\p{N}]/u.test(tr)){
       msgCount=Math.max(0,msgCount-1);
+      saveCount();
       var ur=userBubble.parentNode, br=L.parentNode;
       if(ur && ur.parentNode) ur.parentNode.removeChild(ur);
       if(br && br.parentNode) br.parentNode.removeChild(br);
