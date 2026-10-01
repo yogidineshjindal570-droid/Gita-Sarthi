@@ -687,7 +687,6 @@ function addVerse(bubble,v){
   var c=document.createElement("div");c.className="verse-card";
   var a=document.createElement("div");a.className="v-sa";a.textContent=v.sa;c.appendChild(a);
   if(v.meaning){var m=document.createElement("div");m.className="v-mean";m.textContent=v.meaning;c.appendChild(m);}
-  if(v.ref){var r=document.createElement("div");r.className="v-ref";r.textContent=((currentLang==="en")?"Bhagavad Gita ":"श्रीमद्भगवद्गीता ")+v.ref;c.appendChild(r);}
   bubble.appendChild(c);
 }
 function play(b64){var a=new Audio("data:audio/wav;base64,"+b64);a.play();}
